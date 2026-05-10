@@ -82,7 +82,7 @@ class OAuth2FlowHandler(
         await self.async_set_unique_id(self._email)
         self._abort_if_unique_id_configured()
 
-        return await self.async_step_auth()
+        return await self.async_step_pick_implementation()
 
     async def async_oauth_create_entry(self, data: dict[str, Any]) -> ConfigFlowResult:
         """Intercept after token exchange to collect mailbox settings."""
