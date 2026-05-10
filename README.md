@@ -1,8 +1,14 @@
+[![release][release-badge]][release-url]
+[![commits-since-latest][commits-badge]][commits-url]
+![stars][stars-badge]
+![Dynamic Regex Badge][hacs-badge]
+\
+![build][python-badge]
+![build][hassfest-badge]
+![build][hacs-valid-badge]
+
 # Email IMAP for Home Assistant
-
-[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz)
-[![GitHub Release](https://img.shields.io/github/release/PineappleEmperor/email-ha.svg)](https://github.com/PineappleEmperor/email-ha/releases)
-
+=====================================
 Email HA allows you to connect to your gmail email using OAuth2, and allows for IMAP queries.
 
 ---
@@ -91,3 +97,21 @@ response_variable: result
 | Unread + from | `UNSEEN FROM boss@example.com` |
 
 ---
+
+
+<!-- Badges -->
+
+[commits-badge]: https://img.shields.io/github/commits-since/PineappleEmperor/email-ha/latest?style=flat-square
+[downloads-badge]: https://img.shields.io/github/downloads/pineappleemperor/email-ha/total?style=flat-square
+[hacs-badge]: https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Fhacs%2Fdefault%2Frefs%2Fheads%2Fmaster%2Fintegration&search=(%22PineappleEmperor%2Femail-ha%22)&replace=default&style=flat-square&label=hacs&link=https%3A%2F%2Fgithub.com%2Fhacs%2Fintegration
+[hacs-valid-badge]: https://img.shields.io/github/actions/workflow/status/PineappleEmperor/email-ha/hacs_validate.yml?style=flat-square&label=hacs%20valid
+[release-badge]: https://img.shields.io/github/v/release/PineappleEmperor/email-ha?style=flat-square
+[stars-badge]: https://img.shields.io/github/stars/PineappleEmperor/email-ha?style=flat-square
+[hassfest-badge]: https://img.shields.io/github/actions/workflow/status/PineappleEmperor/email-ha/hassfest_validate.yml?style=flat-square&label=hassfest
+[python-badge]: https://img.shields.io/github/actions/workflow/status/PineappleEmperor/email-ha/python_validate.yml?style=flat-square&label=python
+
+<!-- References -->
+
+[commits-url]: https://github.com/PineappleEmperor/email-ha/commits/main/
+[hacs-url]: https://github.com/hacs/integration
+[release-url]: https://github.com/PineappleEmperor/email-ha/releases
