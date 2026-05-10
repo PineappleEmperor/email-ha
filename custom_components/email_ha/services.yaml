@@ -28,10 +28,22 @@ query_emails:
         text: {}
     max_results:
       name: Maximum results
-      description: Maximum number of emails to return (1–50).
+      description: Maximum number of emails to return (1–200).
       default: 10
       selector:
         number:
           min: 1
-          max: 50
+          max: 200
           mode: box
+    include_full_body:
+      name: Include full body
+      description: Return the complete plain-text and HTML body. Off by default to keep responses small.
+      default: false
+      selector:
+        boolean: {}
+    include_attachments:
+      name: Include attachments
+      description: Return attachments as base64-encoded data with filename, content type, and size. Can produce large responses.
+      default: false
+      selector:
+        boolean: {}

@@ -19,10 +19,9 @@ POLL_FETCH_COUNT = 3  # background poll fetches latest 3; sensor surfaces all 3
 
 # Sensor attribute keys
 ATTR_SUBJECT = "subject"
-ATTR_SENDER = "sender"
+ATTR_SENDER_NAME = "sender_name"
+ATTR_SENDER_EMAIL = "sender_email"
 ATTR_DATE = "date"
-ATTR_PREVIEW = "preview"
-ATTR_MESSAGE_ID = "message_id"
 ATTR_UID = "uid"
 ATTR_EMAILS = "emails"
 ATTR_FOLDER = "folder"
@@ -32,5 +31,7 @@ SERVICE_QUERY_EMAILS = "query_emails"
 SERVICE_ATTR_FOLDER = "folder"
 SERVICE_ATTR_SEARCH_CRITERIA = "search_criteria"
 SERVICE_ATTR_MAX_RESULTS = "max_results"
+SERVICE_ATTR_INCLUDE_FULL_BODY = "include_full_body"
+SERVICE_ATTR_INCLUDE_ATTACHMENTS = "include_attachments"
 
 EVENT_NEW_EMAIL = "email_ha_new_email"

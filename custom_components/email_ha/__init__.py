@@ -27,6 +27,8 @@ from .const import (
     GMAIL_IMAP_PORT,
     PLATFORMS,
     SERVICE_ATTR_FOLDER,
+    SERVICE_ATTR_INCLUDE_ATTACHMENTS,
+    SERVICE_ATTR_INCLUDE_FULL_BODY,
     SERVICE_ATTR_MAX_RESULTS,
     SERVICE_ATTR_SEARCH_CRITERIA,
     SERVICE_QUERY_EMAILS,
@@ -44,6 +46,8 @@ QUERY_EMAILS_SCHEMA = vol.Schema(
         vol.Optional(SERVICE_ATTR_MAX_RESULTS, default=50): vol.All(
             vol.Coerce(int), vol.Range(min=1, max=200)
         ),
+        vol.Optional(SERVICE_ATTR_INCLUDE_FULL_BODY, default=False): cv.boolean,
+        vol.Optional(SERVICE_ATTR_INCLUDE_ATTACHMENTS, default=False): cv.boolean,
     }
 )
 
@@ -124,6 +128,8 @@ def _register_services(hass: HomeAssistant) -> None:
         folder: str = call.data.get(SERVICE_ATTR_FOLDER, DEFAULT_FOLDER)
         criteria: str = call.data.get(SERVICE_ATTR_SEARCH_CRITERIA, "ALL")
         max_results: int = call.data.get(SERVICE_ATTR_MAX_RESULTS, 50)
+        include_full_body: bool = call.data.get(SERVICE_ATTR_INCLUDE_FULL_BODY, False)
+        include_attachments: bool = call.data.get(SERVICE_ATTR_INCLUDE_ATTACHMENTS, False)
 
         try:
             await coordinator.oauth_session.async_ensure_token_valid()
@@ -140,7 +146,11 @@ def _register_services(hass: HomeAssistant) -> None:
         try:
             async with ImapClient(GMAIL_IMAP_HOST, GMAIL_IMAP_PORT) as client:
                 await client.connect(config_entry.data[CONF_EMAIL], access_token)
-                emails = await client.search_emails(folder, criteria, max_results)
+                emails = await client.search_emails(
+                    folder, criteria, max_results,
+                    include_full_body=include_full_body,
+                    include_attachments=include_attachments,
+                )
         except ImapAuthError as err:
             raise ServiceValidationError(f"IMAP authentication error: {err}") from err
         except Exception as err:
