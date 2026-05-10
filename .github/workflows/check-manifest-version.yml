@@ -32,7 +32,7 @@ jobs:
           done < <(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits --jq '.[].commit.message | split("\n")[0]')
 
           if [ -n "$BEST" ]; then
-            gh pr edit ${{ github.event.pull_request.number }} --title "$BEST"
+            gh pr edit ${{ github.event.pull_request.number }} --title "$BEST" --repo ${{ github.repository }}
           else
             echo "::error::No conventional commit found (feat:, fix:, chore:, etc.). Add a semantic prefix to at least one commit."
             exit 1
