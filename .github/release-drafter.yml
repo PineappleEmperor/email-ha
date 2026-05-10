@@ -1,7 +1,11 @@
 name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
 autolabeler:
-  
+
+  - label: "!feature"
+    title:
+      - '/^(feat|fix|chore|docs|refactor|perf|test|build|ci|style|revert)(\(.+\))?!:/i'
+
   - label: "chore"
     branch:
       - '/^(chore|docs?)\/.+/'
@@ -20,8 +24,7 @@ autolabeler:
 categories:
   - title: '🚨 Breaking Change'
     labels:
-      - 'xfeat'
-      - 'xfeature'
+      - '!feature'
       - 'major'
   - title: '🚀 Features'
     labels:
@@ -41,8 +44,7 @@ version-resolver:
   major:
     labels:
       - 'major'
-      - 'xfeature'
-      - 'xfeat'
+      - '!feature'
   minor:
     labels:
       - 'feat'

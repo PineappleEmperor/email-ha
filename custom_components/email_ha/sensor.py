@@ -33,6 +33,8 @@ async def async_setup_entry(
     async_add_entities(
         [
             UnreadCountSensor(coordinator, entry),
+            TotalCountSensor(coordinator, entry),
+            FoldersSensor(coordinator, entry),
             LastEmailSensor(coordinator, entry),
         ]
     )
@@ -41,7 +43,7 @@ async def async_setup_entry(
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
     return DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        name=f"Gmail – {entry.data[CONF_EMAIL]}",
+        name=f"Gmail – {entry.data[CONF_EMAIL].split('@')[0]}",
         manufacturer="Google",
         model="Gmail IMAP (OAuth2)",
         entry_type=DeviceEntryType.SERVICE,
@@ -90,6 +92,53 @@ class UnreadCountSensor(_BaseEmailSensor):
     @property
     def extra_state_attributes(self) -> dict:
         return {ATTR_FOLDER: self._entry.data.get(CONF_FOLDER, "INBOX")}
+
+
+class TotalCountSensor(_BaseEmailSensor):
+    """Total number of messages in the monitored folder."""
+
+    _attr_name = "Total count"
+    _attr_icon = "mdi:email-multiple-outline"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "messages"
+
+    def __init__(
+        self, coordinator: EmailDataUpdateCoordinator, entry: ConfigEntry
+    ) -> None:
+        super().__init__(coordinator, entry, "total_count")
+
+    @property
+    def native_value(self) -> int | None:
+        data = self._email_data
+        return data.total_count if data else None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {ATTR_FOLDER: self._entry.data.get(CONF_FOLDER, "INBOX")}
+
+
+class FoldersSensor(_BaseEmailSensor):
+    """Number of mailbox folders on the account, with folder list as attribute."""
+
+    _attr_name = "Folders"
+    _attr_icon = "mdi:folder-multiple-outline"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "folders"
+
+    def __init__(
+        self, coordinator: EmailDataUpdateCoordinator, entry: ConfigEntry
+    ) -> None:
+        super().__init__(coordinator, entry, "folders")
+
+    @property
+    def native_value(self) -> int | None:
+        data = self._email_data
+        return len(data.folders) if data else None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        data = self._email_data
+        return {"folders": data.folders if data else []}
 
 
 class LastEmailSensor(_BaseEmailSensor):

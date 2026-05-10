@@ -23,6 +23,8 @@ class EmailData:
 
     emails: list[dict[str, Any]] = field(default_factory=list)
     unread_count: int = 0
+    total_count: int = 0
+    folders: list[str] = field(default_factory=list)
 
     @property
     def latest_email(self) -> dict[str, Any] | None:
@@ -79,6 +81,7 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
             async with ImapClient(self._imap_host, self._imap_port) as client:
                 await client.connect(self._email, access_token)
                 status = await client.get_folder_status(self._folder)
+                folders = await client.list_folders()
                 emails = await client.search_emails(
                     self._folder, "ALL", POLL_FETCH_COUNT
                 )
@@ -87,7 +90,12 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
         except Exception as err:
             raise UpdateFailed(f"IMAP error for {self._email}: {err}") from err
 
-        data = EmailData(emails=emails, unread_count=status.get("unseen", 0))
+        data = EmailData(
+            emails=emails,
+            unread_count=status.get("unseen", 0),
+            total_count=status.get("messages", 0),
+            folders=folders,
+        )
         self._fire_new_email_event(data)
         return data
 

@@ -38,7 +38,7 @@ _LOGGER = logging.getLogger(__name__)
 
 QUERY_EMAILS_SCHEMA = vol.Schema(
     {
-        vol.Required("config_entry_id"): cv.string,
+        vol.Optional("config_entry_id"): cv.string,
         vol.Optional(SERVICE_ATTR_FOLDER, default=DEFAULT_FOLDER): cv.string,
         vol.Optional(SERVICE_ATTR_SEARCH_CRITERIA, default="ALL"): cv.string,
         vol.Optional(SERVICE_ATTR_MAX_RESULTS, default=50): vol.All(
@@ -106,14 +106,19 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_query_emails(call: ServiceCall) -> dict[str, Any]:
         """Query emails from any configured account."""
-        entry_id: str = call.data["config_entry_id"]
-        coordinator: EmailDataUpdateCoordinator | None = hass.data.get(DOMAIN, {}).get(
-            entry_id
-        )
+        configured: dict = hass.data.get(DOMAIN, {})
+        entry_id: str | None = call.data.get("config_entry_id")
+        if entry_id is None:
+            if len(configured) == 1:
+                entry_id = next(iter(configured))
+            else:
+                raise ServiceValidationError(
+                    "Multiple email accounts configured — specify an account."
+                )
+        coordinator: EmailDataUpdateCoordinator | None = configured.get(entry_id)
         if coordinator is None:
             raise ServiceValidationError(
-                f"No Email IMAP entry with id '{entry_id}'. "
-                "Check Developer Tools → Services for valid entry IDs."
+                f"No Email IMAP entry with id '{entry_id}'."
             )
 
         folder: str = call.data.get(SERVICE_ATTR_FOLDER, DEFAULT_FOLDER)

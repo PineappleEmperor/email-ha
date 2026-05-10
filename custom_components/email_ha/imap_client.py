@@ -7,7 +7,7 @@ from email.message import Message
 from email.utils import parsedate_to_datetime
 import logging
 import re
-from typing import Any
+from typing import Any, cast
 
 import aioimaplib
 
@@ -136,6 +136,25 @@ class ImapClient:
                 pass
             finally:
                 self._client = None
+
+    async def list_folders(self) -> list[str]:
+        """Return selectable folder names for the account."""
+        if self._client is None:
+            raise ImapClientError("Not connected")
+
+        response = await self._client.list('""', cast(re.Pattern[str], '"*"'))
+        if response.result != "OK":
+            return []
+
+        folders: list[str] = []
+        for line in response.lines:
+            text = line.decode() if isinstance(line, bytes) else str(line)
+            if r"\Noselect" in text:
+                continue
+            m = re.search(r'"/" (?:"([^"]+)"|(\S+))$', text)
+            if m:
+                folders.append(m.group(1) or m.group(2))
+        return folders
 
     async def get_folder_status(self, folder: str) -> dict[str, int]:
         """Return MESSAGES and UNSEEN counts for a folder."""

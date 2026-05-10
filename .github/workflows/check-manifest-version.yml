@@ -2,15 +2,47 @@ name: PR Label & Manifest Check
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [opened, reopened, synchronize, edited]
 
 permissions:
   contents: read
   pull-requests: write
 
 jobs:
+  update-title:
+    runs-on: ubuntu-latest
+    if: github.event.action != 'edited'
+    steps:
+      - name: Set PR title from highest semantic commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BEST=""
+          PRIORITY=0
+
+          while IFS= read -r subject; do
+            if echo "$subject" | grep -qiE '^(feat|fix|chore|docs|refactor|perf|test|build|ci|style|revert)(\(.+\))?!:'; then
+              if [ $PRIORITY -lt 4 ]; then PRIORITY=4; BEST="$subject"; fi
+            elif echo "$subject" | grep -qiE '^feat(\(.+\))?:'; then
+              if [ $PRIORITY -lt 3 ]; then PRIORITY=3; BEST="$subject"; fi
+            elif echo "$subject" | grep -qiE '^fix(\(.+\))?:'; then
+              if [ $PRIORITY -lt 2 ]; then PRIORITY=2; BEST="$subject"; fi
+            elif echo "$subject" | grep -qiE '^(chore|docs|refactor|perf|test|build|ci|style|revert)(\(.+\))?:'; then
+              if [ $PRIORITY -lt 1 ]; then PRIORITY=1; BEST="$subject"; fi
+            fi
+          done < <(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits --jq '.[].commit.message | split("\n")[0]')
+
+          if [ -n "$BEST" ]; then
+            gh pr edit ${{ github.event.pull_request.number }} --title "$BEST" --repo ${{ github.repository }}
+          else
+            echo "::error::No conventional commit found (feat:, fix:, chore:, etc.). Add a semantic prefix to at least one commit."
+            exit 1
+          fi
+
   label:
     runs-on: ubuntu-latest
+    needs: update-title
+    if: always() && (needs.update-title.result == 'success' || needs.update-title.result == 'skipped')
     steps:
       - uses: release-drafter/release-drafter/autolabeler@v7
 
@@ -18,6 +50,7 @@ jobs:
     name: Ensure version is updated in manifest.json
     runs-on: ubuntu-latest
     needs: label
+    if: always() && needs.label.result == 'success'
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v3
@@ -68,7 +101,7 @@ jobs:
             exit 1
           fi
 
-          if echo "$LABELS" | grep -qiE 'xfeat|xfeature|!feat|!feature'; then
+          if echo "$LABELS" | grep -qiE '!feat|!feature|major'; then
             BUMP="xfeature"
           elif echo "$LABELS" | grep -qiE 'feat|feature'; then
             BUMP="feature"
