@@ -7,15 +7,13 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry, ConfigFlowResult, OptionsFlow
-from homeassistant.helpers import config_entry_oauth2_flow
+from homeassistant.helpers import config_entry_oauth2_flow, selector
 
 from .const import (
     CONF_EMAIL,
     CONF_FOLDER,
-    CONF_MAX_EMAILS,
     CONF_SCAN_INTERVAL,
     DEFAULT_FOLDER,
-    DEFAULT_MAX_EMAILS,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     GMAIL_SCOPES,
@@ -26,11 +24,8 @@ _LOGGER = logging.getLogger(__name__)
 STEP_SETTINGS_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_FOLDER, default=DEFAULT_FOLDER): str,
-        vol.Optional(CONF_MAX_EMAILS, default=DEFAULT_MAX_EMAILS): vol.All(
-            vol.Coerce(int), vol.Range(min=1, max=100)
-        ),
-        vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
-            vol.Coerce(int), vol.Range(min=30, max=3600)
+        vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): selector.NumberSelector(
+            selector.NumberSelectorConfig(min=30, max=3600, mode=selector.NumberSelectorMode.BOX)
         ),
     }
 )
@@ -107,7 +102,6 @@ class OAuth2FlowHandler(
                 **self._token_data,
                 CONF_EMAIL: self._email,
                 CONF_FOLDER: user_input[CONF_FOLDER],
-                CONF_MAX_EMAILS: user_input[CONF_MAX_EMAILS],
                 CONF_SCAN_INTERVAL: user_input[CONF_SCAN_INTERVAL],
             },
         )
@@ -133,13 +127,11 @@ class EmailIMAPOptionsFlow(OptionsFlow):
                     CONF_FOLDER, default=current.get(CONF_FOLDER, DEFAULT_FOLDER)
                 ): str,
                 vol.Optional(
-                    CONF_MAX_EMAILS,
-                    default=current.get(CONF_MAX_EMAILS, DEFAULT_MAX_EMAILS),
-                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
-                vol.Optional(
                     CONF_SCAN_INTERVAL,
                     default=current.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
-                ): vol.All(vol.Coerce(int), vol.Range(min=30, max=3600)),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(min=30, max=3600, mode=selector.NumberSelectorMode.BOX)
+                ),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

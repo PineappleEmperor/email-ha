@@ -2,7 +2,7 @@ name: Check Manifest Version Bump
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [labeled]
 
 permissions:
   contents: read

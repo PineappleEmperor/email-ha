@@ -19,10 +19,9 @@ from homeassistant.helpers.config_entry_oauth2_flow import (
 from .const import (
     CONF_EMAIL,
     CONF_FOLDER,
-    CONF_MAX_EMAILS,
     CONF_SCAN_INTERVAL,
     DEFAULT_FOLDER,
-    DEFAULT_MAX_EMAILS,
+    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     GMAIL_IMAP_HOST,
     GMAIL_IMAP_PORT,
@@ -42,8 +41,8 @@ QUERY_EMAILS_SCHEMA = vol.Schema(
         vol.Required("config_entry_id"): cv.string,
         vol.Optional(SERVICE_ATTR_FOLDER, default=DEFAULT_FOLDER): cv.string,
         vol.Optional(SERVICE_ATTR_SEARCH_CRITERIA, default="ALL"): cv.string,
-        vol.Optional(SERVICE_ATTR_MAX_RESULTS, default=DEFAULT_MAX_EMAILS): vol.All(
-            vol.Coerce(int), vol.Range(min=1, max=50)
+        vol.Optional(SERVICE_ATTR_MAX_RESULTS, default=50): vol.All(
+            vol.Coerce(int), vol.Range(min=1, max=200)
         ),
     }
 )
@@ -61,8 +60,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         imap_host=GMAIL_IMAP_HOST,
         imap_port=GMAIL_IMAP_PORT,
         folder=entry.data.get(CONF_FOLDER, DEFAULT_FOLDER),
-        max_emails=entry.data.get(CONF_MAX_EMAILS, DEFAULT_MAX_EMAILS),
-        scan_interval=entry.data.get(CONF_SCAN_INTERVAL, 60),
+        scan_interval=entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
     )
 
     try:
@@ -120,7 +118,7 @@ def _register_services(hass: HomeAssistant) -> None:
 
         folder: str = call.data.get(SERVICE_ATTR_FOLDER, DEFAULT_FOLDER)
         criteria: str = call.data.get(SERVICE_ATTR_SEARCH_CRITERIA, "ALL")
-        max_results: int = call.data.get(SERVICE_ATTR_MAX_RESULTS, DEFAULT_MAX_EMAILS)
+        max_results: int = call.data.get(SERVICE_ATTR_MAX_RESULTS, 50)
 
         try:
             await coordinator.oauth_session.async_ensure_token_valid()
