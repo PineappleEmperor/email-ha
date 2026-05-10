@@ -116,6 +116,10 @@ class LastEmailSensor(_BaseEmailSensor):
         if not data or not data.latest_email:
             return {}
         email = data.latest_email
+        recent = [
+            {ATTR_SUBJECT: e.get(ATTR_SUBJECT), ATTR_SENDER: e.get(ATTR_SENDER)}
+            for e in data.emails[:3]
+        ]
         return {
             ATTR_SENDER: email.get(ATTR_SENDER),
             ATTR_DATE: email.get(ATTR_DATE),
@@ -123,4 +127,5 @@ class LastEmailSensor(_BaseEmailSensor):
             ATTR_MESSAGE_ID: email.get(ATTR_MESSAGE_ID),
             ATTR_UID: email.get(ATTR_UID),
             ATTR_FOLDER: self._entry.data.get(CONF_FOLDER, "INBOX"),
+            "recent_emails": recent,
         }

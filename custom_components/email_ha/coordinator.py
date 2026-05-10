@@ -11,7 +11,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.config_entry_oauth2_flow import OAuth2Session
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import CONF_EMAIL, CONF_FOLDER, CONF_MAX_EMAILS, DOMAIN, EVENT_NEW_EMAIL
+from .const import CONF_EMAIL, CONF_FOLDER, DOMAIN, EVENT_NEW_EMAIL, POLL_FETCH_COUNT
 from .imap_client import ImapAuthError, ImapClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,7 +47,6 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
         imap_host: str,
         imap_port: int,
         folder: str,
-        max_emails: int,
         scan_interval: int,
     ) -> None:
         self.oauth_session = oauth_session
@@ -55,7 +54,6 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
         self._imap_host = imap_host
         self._imap_port = imap_port
         self._folder = folder
-        self._max_emails = max_emails
         self._last_uid: str | None = None
 
         super().__init__(
@@ -82,7 +80,7 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
                 await client.connect(self._email, access_token)
                 status = await client.get_folder_status(self._folder)
                 emails = await client.search_emails(
-                    self._folder, "ALL", self._max_emails
+                    self._folder, "ALL", POLL_FETCH_COUNT
                 )
         except ImapAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err

@@ -1,7 +1,6 @@
 """Async IMAP client with XOAUTH2 authentication."""
 from __future__ import annotations
 
-import base64
 import email
 from email.header import decode_header
 from email.message import Message
@@ -14,11 +13,6 @@ import aioimaplib
 
 _LOGGER = logging.getLogger(__name__)
 
-
-def _build_xoauth2_string(user: str, access_token: str) -> bytes:
-    """Build the base64-encoded XOAUTH2 authentication string."""
-    raw = f"user={user}\x01auth=Bearer {access_token}\x01\x01"
-    return base64.b64encode(raw.encode("ascii"))
 
 
 def _decode_header_value(value: str | None) -> str:
@@ -124,8 +118,7 @@ class ImapClient:
         client = aioimaplib.IMAP4_SSL(host=self._host, port=self._port)
         await client.wait_hello_from_server()
 
-        xoauth2_token = _build_xoauth2_string(user, access_token)
-        response = await client.xoauth2(user, xoauth2_token)
+        response = await client.xoauth2(user, access_token)
         if response.result != "OK":
             await client.logout()
             raise ImapAuthError(

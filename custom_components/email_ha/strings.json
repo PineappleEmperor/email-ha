@@ -17,7 +17,6 @@
         "description": "Choose which folder to monitor and how often to poll.",
         "data": {
           "folder": "IMAP folder",
-          "max_emails": "Emails to fetch per poll",
           "scan_interval": "Poll interval (seconds)"
         }
       }
@@ -36,7 +35,6 @@
         "title": "Gmail IMAP options",
         "data": {
           "folder": "IMAP folder",
-          "max_emails": "Emails to fetch per poll",
           "scan_interval": "Poll interval (seconds)"
         }
       }

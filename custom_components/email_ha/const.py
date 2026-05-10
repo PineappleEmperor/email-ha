@@ -7,7 +7,6 @@ PLATFORMS = ["sensor"]
 
 CONF_EMAIL = "email"
 CONF_FOLDER = "folder"
-CONF_MAX_EMAILS = "max_emails"
 CONF_SCAN_INTERVAL = "scan_interval"
 
 GMAIL_IMAP_HOST = "imap.gmail.com"
@@ -15,8 +14,8 @@ GMAIL_IMAP_PORT = 993
 GMAIL_SCOPES = "https://mail.google.com/"
 
 DEFAULT_FOLDER = "INBOX"
-DEFAULT_MAX_EMAILS = 10
 DEFAULT_SCAN_INTERVAL = 300  # seconds
+POLL_FETCH_COUNT = 3  # background poll fetches latest 3; sensor surfaces all 3
 
 # Sensor attribute keys
 ATTR_SUBJECT = "subject"
