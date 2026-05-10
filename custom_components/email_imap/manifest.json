@@ -1,0 +1,12 @@
+{
+  "domain": "email-ha",
+  "name": "Email HA",
+  "codeowners": ["@PineappleEmperor"],
+  "config_flow": true,
+  "dependencies": ["application_credentials"],
+  "documentation": "https://github.com/PineappleEmperor/email-ha",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "requirements": ["aioimaplib>=1.0.1"],
+  "version": "0.1.0"
+}
