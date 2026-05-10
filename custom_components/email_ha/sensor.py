@@ -11,9 +11,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import (
     ATTR_DATE,
     ATTR_FOLDER,
-    ATTR_MESSAGE_ID,
-    ATTR_PREVIEW,
-    ATTR_SENDER,
+    ATTR_SENDER_EMAIL,
+    ATTR_SENDER_NAME,
     ATTR_SUBJECT,
     ATTR_UID,
     CONF_EMAIL,
@@ -166,14 +165,17 @@ class LastEmailSensor(_BaseEmailSensor):
             return {}
         email = data.latest_email
         recent = [
-            {ATTR_SUBJECT: e.get(ATTR_SUBJECT), ATTR_SENDER: e.get(ATTR_SENDER)}
+            {
+                ATTR_SUBJECT: e.get(ATTR_SUBJECT),
+                ATTR_SENDER_NAME: e.get(ATTR_SENDER_NAME),
+                ATTR_SENDER_EMAIL: e.get(ATTR_SENDER_EMAIL),
+            }
             for e in data.emails[:3]
         ]
         return {
-            ATTR_SENDER: email.get(ATTR_SENDER),
+            ATTR_SENDER_NAME: email.get(ATTR_SENDER_NAME),
+            ATTR_SENDER_EMAIL: email.get(ATTR_SENDER_EMAIL),
             ATTR_DATE: email.get(ATTR_DATE),
-            ATTR_PREVIEW: email.get(ATTR_PREVIEW),
-            ATTR_MESSAGE_ID: email.get(ATTR_MESSAGE_ID),
             ATTR_UID: email.get(ATTR_UID),
             ATTR_FOLDER: self._entry.data.get(CONF_FOLDER, "INBOX"),
             "recent_emails": recent,

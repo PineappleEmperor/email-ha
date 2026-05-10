@@ -1,10 +1,11 @@
 """Async IMAP client with XOAUTH2 authentication."""
 from __future__ import annotations
 
+import base64
 import email
 from email.header import decode_header
 from email.message import Message
-from email.utils import parsedate_to_datetime
+from email.utils import parseaddr, parsedate_to_datetime
 import logging
 import re
 from typing import Any, cast
@@ -29,8 +30,8 @@ def _decode_header_value(value: str | None) -> str:
     return "".join(result)
 
 
-def _get_text_body(msg: Message, max_length: int = 500) -> str:
-    """Extract plain-text body preview from an email message."""
+def _get_text_body(msg: Message, max_length: int | None = 500) -> str:
+    """Extract plain-text body from an email message. Pass max_length=None for full text."""
     if msg.is_multipart():
         for part in msg.walk():
             if (
@@ -41,7 +42,8 @@ def _get_text_body(msg: Message, max_length: int = 500) -> str:
                     payload = part.get_payload(decode=True)
                     if isinstance(payload, bytes):
                         charset = part.get_content_charset() or "utf-8"
-                        return payload.decode(charset, errors="replace")[:max_length]
+                        text = payload.decode(charset, errors="replace")
+                        return text if max_length is None else text[:max_length]
                 except Exception:  # noqa: BLE001
                     pass
     else:
@@ -49,13 +51,58 @@ def _get_text_body(msg: Message, max_length: int = 500) -> str:
             payload = msg.get_payload(decode=True)
             if isinstance(payload, bytes):
                 charset = msg.get_content_charset() or "utf-8"
-                return payload.decode(charset, errors="replace")[:max_length]
+                text = payload.decode(charset, errors="replace")
+                return text if max_length is None else text[:max_length]
         except Exception:  # noqa: BLE001
             pass
     return ""
 
 
-def parse_email_bytes(raw: bytes, uid: str) -> dict[str, Any]:
+def _get_html_body(msg: Message) -> str:
+    """Extract HTML body from an email message."""
+    if msg.is_multipart():
+        for part in msg.walk():
+            if (
+                part.get_content_type() == "text/html"
+                and not part.get("Content-Disposition")
+            ):
+                try:
+                    payload = part.get_payload(decode=True)
+                    if isinstance(payload, bytes):
+                        charset = part.get_content_charset() or "utf-8"
+                        return payload.decode(charset, errors="replace")
+                except Exception:  # noqa: BLE001
+                    pass
+    return ""
+
+
+def _get_attachments(msg: Message) -> list[dict[str, Any]]:
+    """Extract attachments from an email as base64-encoded data with metadata."""
+    attachments: list[dict[str, Any]] = []
+    for part in msg.walk():
+        if part.get_content_maintype() == "multipart":
+            continue
+        content_disposition = str(part.get("Content-Disposition", ""))
+        if "attachment" not in content_disposition:
+            continue
+        payload = part.get_payload(decode=True)
+        if not isinstance(payload, bytes):
+            continue
+        attachments.append({
+            "filename": _decode_header_value(part.get_filename() or "attachment"),
+            "content_type": part.get_content_type(),
+            "size": len(payload),
+            "data": base64.b64encode(payload).decode("ascii"),
+        })
+    return attachments
+
+
+def parse_email_bytes(
+    raw: bytes,
+    uid: str,
+    include_full_body: bool = False,
+    include_attachments: bool = False,
+) -> dict[str, Any]:
     """Parse raw email bytes into a structured dictionary."""
     msg = email.message_from_bytes(raw)
 
@@ -67,14 +114,21 @@ def parse_email_bytes(raw: bytes, uid: str) -> dict[str, Any]:
         except Exception:  # noqa: BLE001
             date_iso = date_str
 
-    return {
+    sender_name, sender_email = parseaddr(_decode_header_value(msg.get("From", "")))
+
+    result: dict[str, Any] = {
         "uid": uid,
         "subject": _decode_header_value(msg.get("Subject")),
-        "sender": _decode_header_value(msg.get("From", "")),
+        "sender_name": sender_name,
+        "sender_email": sender_email,
         "date": date_iso,
-        "message_id": (msg.get("Message-ID") or "").strip(),
-        "preview": _get_text_body(msg, 500).strip()[:200],
     }
+    if include_full_body:
+        result["body_text"] = _get_text_body(msg, None).strip()
+        result["body_html"] = _get_html_body(msg).strip()
+    if include_attachments:
+        result["attachments"] = _get_attachments(msg)
+    return result
 
 
 def _extract_literal_bytes(lines: list) -> bytes | None:
@@ -180,6 +234,8 @@ class ImapClient:
         folder: str,
         criteria: str = "ALL",
         max_results: int = 10,
+        include_full_body: bool = False,
+        include_attachments: bool = False,
     ) -> list[dict[str, Any]]:
         """IMAP criteria search."""
         if self._client is None:
@@ -207,13 +263,18 @@ class ImapClient:
 
         emails: list[dict[str, Any]] = []
         for uid in reversed(recent):
-            data = await self._fetch_email(uid)
+            data = await self._fetch_email(uid, include_full_body, include_attachments)
             if data:
                 emails.append(data)
 
         return emails
 
-    async def _fetch_email(self, uid: str) -> dict[str, Any] | None:
+    async def _fetch_email(
+        self,
+        uid: str,
+        include_full_body: bool = False,
+        include_attachments: bool = False,
+    ) -> dict[str, Any] | None:
         """Fetch and parse a single message by UID."""
         if self._client is None:
             return None
@@ -224,7 +285,7 @@ class ImapClient:
             raw = _extract_literal_bytes(response.lines)
             if raw is None:
                 return None
-            return parse_email_bytes(raw, uid)
+            return parse_email_bytes(raw, uid, include_full_body, include_attachments)
         except Exception as err:  # noqa: BLE001
             _LOGGER.debug("Failed to fetch UID %s: %s", uid, err)
             return None
