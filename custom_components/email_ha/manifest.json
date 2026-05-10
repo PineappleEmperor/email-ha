@@ -9,5 +9,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/PineappleEmperor/email-ha/issues",
   "requirements": ["aioimaplib>=1.0.1"],
-  "version": "0.1.5"
+  "version": "0.1.6"
 }
