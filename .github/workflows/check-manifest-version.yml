@@ -29,21 +29,14 @@ jobs:
             elif echo "$subject" | grep -qiE '^(chore|docs|refactor|perf|test|build|ci|style|revert)(\(.+\))?:'; then
               if [ $PRIORITY -lt 1 ]; then PRIORITY=1; BEST="$subject"; fi
             fi
-          done < <(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].messageHeadline')
+          done < <(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits --jq '.[].commit.message | split("\n")[0]')
 
           if [ -n "$BEST" ]; then
             gh pr edit ${{ github.event.pull_request.number }} --title "$BEST"
+          else
+            echo "::error::No conventional commit found (feat:, fix:, chore:, etc.). Add a semantic prefix to at least one commit."
+            exit 1
           fi
-
-  lint-title:
-    runs-on: ubuntu-latest
-    needs: update-title
-    permissions:
-      pull-requests: read
-    steps:
-      - uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   label:
     runs-on: ubuntu-latest
@@ -105,7 +98,7 @@ jobs:
             exit 1
           fi
 
-          if echo "$LABELS" | grep -qiE 'xfeat|xfeature|!feat|!feature'; then
+          if echo "$LABELS" | grep -qiE '!feat|!feature|major'; then
             BUMP="xfeature"
           elif echo "$LABELS" | grep -qiE 'feat|feature'; then
             BUMP="feature"
