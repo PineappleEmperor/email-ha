@@ -60,6 +60,8 @@ class OAuth2FlowHandler(
             "access_type": "offline",
             # Force the consent screen so Google always returns a refresh token
             "prompt": "consent",
+            # Pre-select the account the user entered
+            "login_hint": self._email,
         }
 
     async def async_step_user(
