@@ -41,7 +41,7 @@ async def async_setup_entry(
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
     return DeviceInfo(
         identifiers={(DOMAIN, entry.entry_id)},
-        name=f"Gmail – {entry.data[CONF_EMAIL]}",
+        name=f"Gmail – {entry.data[CONF_EMAIL].split('@')[0]}",
         manufacturer="Google",
         model="Gmail IMAP (OAuth2)",
         entry_type=DeviceEntryType.SERVICE,
