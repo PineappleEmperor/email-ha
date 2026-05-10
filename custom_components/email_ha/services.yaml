@@ -9,7 +9,7 @@ query_emails:
       name: Account
       description: >
         The config entry ID of the email account to query. Find this under
-        Developer Tools → States (look for sensor.email_imap_…) or in the
+        Developer Tools → States (look for sensor.email_ha_…) or in the
         integration's settings URL.
       required: true
       selector:

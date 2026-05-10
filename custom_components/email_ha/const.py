@@ -1,7 +1,7 @@
 """Constants for the Email IMAP integration."""
 from __future__ import annotations
 
-DOMAIN = "email_imap"
+DOMAIN = "email_ha"
 
 PLATFORMS = ["sensor"]
 
@@ -34,4 +34,4 @@ SERVICE_ATTR_FOLDER = "folder"
 SERVICE_ATTR_SEARCH_CRITERIA = "search_criteria"
 SERVICE_ATTR_MAX_RESULTS = "max_results"
 
-EVENT_NEW_EMAIL = "email_imap_new_email"
+EVENT_NEW_EMAIL = "email_ha_new_email"

@@ -1,5 +1,5 @@
 {
-  "domain": "email-ha",
+  "domain": "email_ha",
   "name": "Email HA",
   "codeowners": ["@PineappleEmperor"],
   "config_flow": true,
@@ -8,5 +8,6 @@
   "integration_type": "hub",
   "iot_class": "cloud_polling",
   "requirements": ["aioimaplib>=1.0.1"],
+  "issue_tracker": "https://github.com/PineappleEmperor/email-ha/issues",
   "version": "0.1.0"
 }

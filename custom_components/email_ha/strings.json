@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Set up Gmail IMAP",
-        "description": "Enter your Gmail address. You will be redirected to Google to authorise access.\n\nBefore continuing, make sure you have:\n- Enabled IMAP in Gmail settings\n- Created an OAuth2 app at {credentials_url} with scope `https://mail.google.com/`\n- Added your HA redirect URI to the allowed origins",
+        "description": "Enter your Gmail address. You will be redirected to Google to authorise access.\n\nBefore continuing, ensure IMAP is enabled in your Gmail settings and you have configured an OAuth2 application with the Gmail IMAP scope.",
         "data": {
           "email": "Gmail address"
         }
