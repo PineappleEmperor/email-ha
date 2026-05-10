@@ -12,15 +12,28 @@ jobs:
   update-title:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
-      - name: Set PR title from latest commit subject
+      - name: Set PR title from highest semantic commit
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          COMMIT_SUBJECT=$(git log -1 --no-merges --format="%s")
-          gh pr edit ${{ github.event.pull_request.number }} --title "$COMMIT_SUBJECT"
+          BEST=""
+          PRIORITY=0
+
+          while IFS= read -r subject; do
+            if echo "$subject" | grep -qiE '^(feat|fix|chore|docs|refactor|perf|test|build|ci|style|revert)(\(.+\))?!:'; then
+              if [ $PRIORITY -lt 4 ]; then PRIORITY=4; BEST="$subject"; fi
+            elif echo "$subject" | grep -qiE '^feat(\(.+\))?:'; then
+              if [ $PRIORITY -lt 3 ]; then PRIORITY=3; BEST="$subject"; fi
+            elif echo "$subject" | grep -qiE '^fix(\(.+\))?:'; then
+              if [ $PRIORITY -lt 2 ]; then PRIORITY=2; BEST="$subject"; fi
+            elif echo "$subject" | grep -qiE '^(chore|docs|refactor|perf|test|build|ci|style|revert)(\(.+\))?:'; then
+              if [ $PRIORITY -lt 1 ]; then PRIORITY=1; BEST="$subject"; fi
+            fi
+          done < <(gh pr view ${{ github.event.pull_request.number }} --json commits --jq '.commits[].messageHeadline')
+
+          if [ -n "$BEST" ]; then
+            gh pr edit ${{ github.event.pull_request.number }} --title "$BEST"
+          fi
 
   label:
     runs-on: ubuntu-latest
