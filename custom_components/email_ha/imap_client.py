@@ -172,7 +172,7 @@ class ImapClient:
                 f"Cannot open folder '{folder}': {exam_resp.lines}"
             )
 
-        response = await self._client.uid("search", criteria)
+        response = await self._client.uid_search(*criteria.split(), charset=None)
         if response.result != "OK" or not response.lines:
             return []
 
