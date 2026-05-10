@@ -24,10 +24,10 @@
     },
     "abort": {
       "already_configured": "This Gmail address is already configured.",
-      "missing_credentials": "No application credentials found. Add them under Settings → Application Credentials.",
-      "oauth_error": "OAuth2 error occurred.",
-      "oauth_unauthorized": "OAuth2 authorisation was rejected.",
-      "oauth_failed": "Could not obtain OAuth2 token."
+      "missing_credentials": "No application credentials found. Add them under Settings → Devices & Services → ⋮ → Application Credentials.",
+      "oauth_error": "An OAuth2 error occurred. Check that your OAuth2 client ID and secret are correct under Settings → Devices & Services → ⋮ → Application Credentials.",
+      "oauth_unauthorized": "Google rejected the authorisation. Ensure your OAuth2 app has the Gmail IMAP scope and your account is added as a test user.",
+      "oauth_failed": "Could not obtain an OAuth2 token. Try removing and re-adding the application credentials, then set up again."
     }
   },
   "options": {

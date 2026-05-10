@@ -67,21 +67,22 @@ class OAuth2FlowHandler(
     ) -> ConfigFlowResult:
         """Collect the Gmail address, then hand off to OAuth2."""
         if user_input is None:
+            implementations = await config_entry_oauth2_flow.async_get_implementations(
+                self.hass, DOMAIN
+            )
+            if not implementations:
+                return self.async_abort(reason="missing_credentials")
+
             return self.async_show_form(
                 step_id="user",
                 data_schema=vol.Schema({vol.Required(CONF_EMAIL): str}),
-                description_placeholders={
-                    "credentials_url": (
-                        "https://console.cloud.google.com/apis/credentials"
-                    )
-                },
             )
 
         self._email = user_input[CONF_EMAIL].strip().lower()
         await self.async_set_unique_id(self._email)
         self._abort_if_unique_id_configured()
 
-        return await self.async_step_auth()
+        return await self.async_step_pick_implementation()
 
     async def async_oauth_create_entry(self, data: dict[str, Any]) -> ConfigFlowResult:
         """Intercept after token exchange to collect mailbox settings."""

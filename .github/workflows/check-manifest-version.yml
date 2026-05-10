@@ -24,13 +24,13 @@ jobs:
       - name: Checkout base manifest.json
         run: |
           git fetch origin $BASE_REF
-          git show origin/$BASE_REF:custom_components/settleup/manifest.json > ../manifest_base.json
+          git show origin/$BASE_REF:custom_components/email_ha/manifest.json > ../manifest_base.json
 
       - name: Compare manifest versions
         id: compare
         run: |
           BASE_VERSION=$(jq -r '.version' ../manifest_base.json)
-          PR_VERSION=$(jq -r '.version' custom_components/settleup/manifest.json)
+          PR_VERSION=$(jq -r '.version' custom_components/email_ha/manifest.json)
 
           echo "Base version: $BASE_VERSION"
           echo "PR version: $PR_VERSION"
@@ -113,7 +113,7 @@ jobs:
           BUMP_TYPE="${{ steps.bump.outputs.RECOMMENDED_BUMP }}"
           NEW_VERSION="${{ steps.bump.outputs.SUGGESTED_VERSION }}"
           MSG="<!-- version-check -->"
-          MSG+="⚠️ **Version in \`custom_components/settleup/manifest.json\` has not been updated.**"
+          MSG+="⚠️ **Version in \`custom_components/email_ha/manifest.json\` has not been updated.**"
 
           Please update the \`version\` field according to [Semantic Versioning](https://semver.org/)."
 
