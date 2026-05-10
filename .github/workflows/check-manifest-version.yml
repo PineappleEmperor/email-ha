@@ -9,8 +9,22 @@ permissions:
   pull-requests: write
 
 jobs:
+  update-title:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Set PR title from latest commit subject
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          COMMIT_SUBJECT=$(git log -1 --format="%s")
+          gh pr edit ${{ github.event.pull_request.number }} --title "$COMMIT_SUBJECT"
+
   label:
     runs-on: ubuntu-latest
+    needs: update-title
     steps:
       - uses: release-drafter/release-drafter/autolabeler@v7
 
