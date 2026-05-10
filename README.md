@@ -8,7 +8,6 @@
 ![build][hacs-valid-badge]
 
 # Email IMAP for Home Assistant
-=====================================
 Email HA allows you to connect to your gmail email using OAuth2, and allows for IMAP queries.
 
 ---
