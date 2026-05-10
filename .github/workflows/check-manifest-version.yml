@@ -19,7 +19,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          COMMIT_SUBJECT=$(git log -1 --format="%s")
+          COMMIT_SUBJECT=$(git log -1 --no-merges --format="%s")
           gh pr edit ${{ github.event.pull_request.number }} --title "$COMMIT_SUBJECT"
 
   label:
