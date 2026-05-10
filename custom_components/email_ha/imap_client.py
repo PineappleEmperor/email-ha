@@ -166,7 +166,7 @@ class ImapClient:
         if self._client is None:
             raise ImapClientError("Not connected")
 
-        exam_resp = await self._client.examine(folder)
+        exam_resp = await self._client.select(folder)
         if exam_resp.result != "OK":
             raise ImapClientError(
                 f"Cannot open folder '{folder}': {exam_resp.lines}"
