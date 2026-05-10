@@ -1,0 +1,4 @@
+pytest
+pytest-asyncio
+pytest-homeassistant-custom-component
+aioimaplib>=1.0.1

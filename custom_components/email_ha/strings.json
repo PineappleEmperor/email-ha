@@ -1,0 +1,55 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Gmail IMAP",
+        "description": "Enter your Gmail address. You will be redirected to Google to authorise access.\n\nBefore continuing, ensure IMAP is enabled in your Gmail settings and you have configured an OAuth2 application with the Gmail IMAP scope.",
+        "data": {
+          "email": "Gmail address"
+        }
+      },
+      "auth": {
+        "title": "Authorise with Google",
+        "description": "Click the link below to grant Home Assistant access to your Gmail via IMAP."
+      },
+      "settings": {
+        "title": "Mailbox settings",
+        "description": "Choose which folder to monitor and how often to poll.",
+        "data": {
+          "folder": "IMAP folder",
+          "max_emails": "Emails to fetch per poll",
+          "scan_interval": "Poll interval (seconds)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This Gmail address is already configured.",
+      "missing_credentials": "No application credentials found. Add them under Settings → Application Credentials.",
+      "oauth_error": "OAuth2 error occurred.",
+      "oauth_unauthorized": "OAuth2 authorisation was rejected.",
+      "oauth_failed": "Could not obtain OAuth2 token."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gmail IMAP options",
+        "data": {
+          "folder": "IMAP folder",
+          "max_emails": "Emails to fetch per poll",
+          "scan_interval": "Poll interval (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "unread_count": {
+        "name": "Unread count"
+      },
+      "last_email": {
+        "name": "Last email"
+      }
+    }
+  }
+}

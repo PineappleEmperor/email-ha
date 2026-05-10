@@ -1,0 +1,62 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+autolabeler:
+  
+  - label: "chore"
+    branch:
+      - '/^(chore|docs?)\/.+/'
+    title:
+      - '/^(chore|docs).*/i'
+  - label: "fix"
+    branch:
+      - '/^fix\/.+/'
+    title:
+      - '/^fix.*/i'
+  - label: "feature"
+    branch:
+      - '/^(feature|feat)\/.+/'
+    title:
+      - '/^(feat|feature).*/i'
+categories:
+  - title: '🚨 Breaking Change'
+    labels:
+      - 'xfeat'
+      - 'xfeature'
+      - 'major'
+  - title: '🚀 Features'
+    labels:
+      - 'feat'
+      - 'feature'
+      - 'enhancement'
+  - title: '🔧 Fixes'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+  - title: '🧰 Maintenance'
+    label: 'chore'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
+version-resolver:
+  major:
+    labels:
+      - 'major'
+      - 'xfeature'
+      - 'xfeat'
+  minor:
+    labels:
+      - 'feat'
+      - 'feature'
+      - 'minor'
+  patch:
+    labels:
+      - 'patch'
+      - 'fix'
+      - 'chore'
+      - 'bugfix'
+      - 'bug'
+  default: patch
+template: |
+  ## Changes
+
+  $CHANGES

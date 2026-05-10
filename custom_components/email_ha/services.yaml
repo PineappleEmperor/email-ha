@@ -1,0 +1,39 @@
+query_emails:
+  name: Query emails
+  description: >
+    Search an IMAP folder using standard IMAP search criteria and return
+    matching emails. Use the response variable to access the results in
+    automations or scripts.
+  fields:
+    config_entry_id:
+      name: Account
+      description: >
+        The config entry ID of the email account to query. Find this under
+        Developer Tools → States (look for sensor.email_ha_…) or in the
+        integration's settings URL.
+      required: true
+      selector:
+        text: {}
+    folder:
+      name: Folder
+      description: IMAP folder to search (e.g. INBOX, Sent, Spam).
+      default: INBOX
+      selector:
+        text: {}
+    search_criteria:
+      name: Search criteria
+      description: >
+        IMAP search string. Examples: ALL, UNSEEN,
+        FROM user@example.com, SUBJECT "invoice", SINCE 01-Jan-2025.
+      default: ALL
+      selector:
+        text: {}
+    max_results:
+      name: Maximum results
+      description: Maximum number of emails to return (1–50).
+      default: 10
+      selector:
+        number:
+          min: 1
+          max: 50
+          mode: box
