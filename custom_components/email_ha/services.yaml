@@ -7,13 +7,11 @@ query_emails:
   fields:
     config_entry_id:
       name: Account
-      description: >
-        The config entry ID of the email account to query. Find this under
-        Developer Tools → States (look for sensor.email_ha_…) or in the
-        integration's settings URL.
-      required: true
+      description: The email account to query.
+      required: false
       selector:
-        text: {}
+        config_entry:
+          integration: email_ha
     folder:
       name: Folder
       description: IMAP folder to search (e.g. INBOX, Sent, Spam).
