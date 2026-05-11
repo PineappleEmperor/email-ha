@@ -57,6 +57,7 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
         self._imap_host = imap_host
         self._imap_port = imap_port
         self._folder = folder
+        self._scan_interval = scan_interval
         self._last_uid: str | None = None
         self.last_success_time: datetime | None = None
 
