@@ -55,7 +55,7 @@ jobs:
     if: always() && needs.label.result == 'success'
     steps:
       - name: Checkout PR branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
