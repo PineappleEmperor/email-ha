@@ -46,8 +46,8 @@ jobs:
     steps:
       - uses: release-drafter/release-drafter@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          disable-releaser: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          dry-run: true
 
   check-version:
     name: Ensure version is updated in manifest.json
