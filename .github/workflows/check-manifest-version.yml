@@ -44,9 +44,26 @@ jobs:
     needs: update-title
     if: always() && (needs.update-title.result == 'success' || needs.update-title.result == 'skipped')
     steps:
-      - uses: release-drafter/release-drafter/autolabeler@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Apply label from PR title
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE=$(gh pr view ${{ github.event.pull_request.number }} --json title -q '.title' --repo ${{ github.repository }})
+
+          if echo "$TITLE" | grep -qiE '^(feat|fix|chore|docs|refactor|perf|test|build|ci|style|revert)(\(.+\))?!:'; then
+            LABEL="!feature"
+          elif echo "$TITLE" | grep -qiE '^feat(\(.+\))?:'; then
+            LABEL="feature"
+          elif echo "$TITLE" | grep -qiE '^fix(\(.+\))?:'; then
+            LABEL="fix"
+          elif echo "$TITLE" | grep -qiE '^(chore|docs|refactor|perf|test|build|ci|style|revert)(\(.+\))?:'; then
+            LABEL="chore"
+          else
+            echo "No matching label for: $TITLE"
+            exit 0
+          fi
+
+          gh pr edit ${{ github.event.pull_request.number }} --add-label "$LABEL" --repo ${{ github.repository }}
 
   check-version:
     name: Ensure version is updated in manifest.json

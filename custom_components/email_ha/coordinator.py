@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import logging
+import time
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -11,7 +12,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.config_entry_oauth2_flow import OAuth2Session
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import CONF_EMAIL, CONF_FOLDER, DOMAIN, EVENT_NEW_EMAIL, POLL_FETCH_COUNT
+from .const import DOMAIN, EVENT_NEW_EMAIL, POLL_FETCH_COUNT
 from .imap_client import ImapAuthError, ImapClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -69,14 +70,19 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
     async def _async_update_data(self) -> EmailData:
         """Fetch latest emails; raise on auth or connection failure."""
         try:
+            token: dict[str, Any] = self.oauth_session.token
+            if token.get("expires_at", 0) - time.time() < 600:
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    data={**self.config_entry.data, "token": {**token, "expires_at": time.time() - 1}},
+                )
             await self.oauth_session.async_ensure_token_valid()
         except Exception as err:
             raise ConfigEntryAuthFailed(
                 f"Token refresh failed for {self._email}"
             ) from err
 
-        token: dict[str, Any] = self.oauth_session.token  # type: ignore[assignment]
-        access_token = str(token["access_token"])
+        access_token = str(self.oauth_session.token["access_token"])
 
         try:
             async with ImapClient(self._imap_host, self._imap_port) as client:
@@ -106,7 +112,6 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
         new_uid = data.latest_uid
         if new_uid and new_uid != self._last_uid:
             if self._last_uid is not None:
-                # Only fire after the first successful poll so we don't spam on startup
                 self.hass.bus.async_fire(
                     EVENT_NEW_EMAIL,
                     {
