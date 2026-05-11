@@ -248,7 +248,11 @@ class ImapClient:
             )
 
         response = await self._client.uid_search(*criteria.split(), charset=None)
-        if response.result != "OK" or not response.lines:
+        if response.result != "OK":
+            raise ImapClientError(
+                f"UID SEARCH failed for folder '{folder}': {response.lines}"
+            )
+        if not response.lines:
             return []
 
         uid_line = response.lines[0]
