@@ -44,9 +44,10 @@ jobs:
     needs: update-title
     if: always() && (needs.update-title.result == 'success' || needs.update-title.result == 'skipped')
     steps:
-      - uses: release-drafter/release-drafter/autolabeler@v7
+      - uses: release-drafter/release-drafter@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          disable-releaser: true
 
   check-version:
     name: Ensure version is updated in manifest.json
