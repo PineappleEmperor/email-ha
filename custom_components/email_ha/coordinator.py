@@ -71,13 +71,17 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
         """Fetch latest emails; raise on auth or connection failure."""
         try:
             token: dict[str, Any] = self.oauth_session.token
-            if token.get("expires_at", 0) - time.time() < 600:
+            expires_in = token.get("expires_at", 0) - time.time()
+            _LOGGER.debug("Token expires in %.0fs for %s", expires_in, self._email)
+            if expires_in < 600:
+                _LOGGER.debug("Proactively refreshing token for %s (%.0fs remaining)", self._email, expires_in)
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     data={**self.config_entry.data, "token": {**token, "expires_at": time.time() - 1}},
                 )
             await self.oauth_session.async_ensure_token_valid()
         except Exception as err:
+            _LOGGER.warning("Token refresh failed for %s: %s", self._email, err)
             raise ConfigEntryAuthFailed(
                 f"Token refresh failed for {self._email}"
             ) from err
@@ -93,11 +97,14 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
                     self._folder, "ALL", POLL_FETCH_COUNT
                 )
         except ImapAuthError as err:
+            _LOGGER.warning("IMAP auth error for %s: %s", self._email, err)
             raise ConfigEntryAuthFailed(str(err)) from err
         except Exception as err:
+            _LOGGER.warning("IMAP error for %s: %s", self._email, err)
             raise UpdateFailed(f"IMAP error for {self._email}: {err}") from err
 
         self.last_success_time = datetime.now(timezone.utc)
+        _LOGGER.debug("Successful update for %s, fetched %d emails", self._email, len(emails))
         data = EmailData(
             emails=emails,
             unread_count=status.get("unseen", 0),

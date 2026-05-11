@@ -1,11 +1,14 @@
 """Sensor platform for Email IMAP."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
+import logging
+
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
-from datetime import datetime, timezone
-
 from homeassistant.core import HomeAssistant
+
+_LOGGER = logging.getLogger(__name__)
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -71,12 +74,24 @@ class _BaseEmailSensor(CoordinatorEntity[EmailDataUpdateCoordinator], SensorEnti
     @property
     def available(self) -> bool:
         if self.coordinator.data is None:
+            _LOGGER.debug("%s unavailable: no data yet", self.entity_id)
             return False
         last_success = self.coordinator.last_success_time
         if last_success is None:
+            _LOGGER.debug("%s unavailable: last_success_time not set", self.entity_id)
             return False
         elapsed = (datetime.now(timezone.utc) - last_success).total_seconds()
-        return elapsed <= UNAVAILABLE_AFTER_SECONDS
+        if elapsed > UNAVAILABLE_AFTER_SECONDS:
+            _LOGGER.warning(
+                "%s unavailable: no successful update for %.0fs (threshold %ds); "
+                "coordinator last_update_success=%s",
+                self.entity_id,
+                elapsed,
+                UNAVAILABLE_AFTER_SECONDS,
+                self.coordinator.last_update_success,
+            )
+            return False
+        return True
 
     @property
     def _email_data(self) -> EmailData | None:
