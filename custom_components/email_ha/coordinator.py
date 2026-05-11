@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 from typing import Any
 
@@ -57,6 +57,7 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
         self._imap_port = imap_port
         self._folder = folder
         self._last_uid: str | None = None
+        self.last_success_time: datetime | None = None
 
         super().__init__(
             hass,
@@ -90,6 +91,7 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
         except Exception as err:
             raise UpdateFailed(f"IMAP error for {self._email}: {err}") from err
 
+        self.last_success_time = datetime.now(timezone.utc)
         data = EmailData(
             emails=emails,
             unread_count=status.get("unseen", 0),

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
+from datetime import datetime, timezone
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -18,6 +20,7 @@ from .const import (
     CONF_EMAIL,
     CONF_FOLDER,
     DOMAIN,
+    UNAVAILABLE_AFTER_SECONDS,
 )
 from .coordinator import EmailData, EmailDataUpdateCoordinator
 
@@ -64,6 +67,16 @@ class _BaseEmailSensor(CoordinatorEntity[EmailDataUpdateCoordinator], SensorEnti
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_{unique_suffix}"
         self._attr_device_info = _device_info(entry)
+
+    @property
+    def available(self) -> bool:
+        if self.coordinator.data is None:
+            return False
+        last_success = self.coordinator.last_success_time
+        if last_success is None:
+            return False
+        elapsed = (datetime.now(timezone.utc) - last_success).total_seconds()
+        return elapsed <= UNAVAILABLE_AFTER_SECONDS
 
     @property
     def _email_data(self) -> EmailData | None:

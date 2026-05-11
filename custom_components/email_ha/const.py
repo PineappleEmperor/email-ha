@@ -16,6 +16,7 @@ GMAIL_SCOPES = "https://mail.google.com/"
 DEFAULT_FOLDER = "INBOX"
 DEFAULT_SCAN_INTERVAL = 300  # seconds
 POLL_FETCH_COUNT = 3  # background poll fetches latest 3; sensor surfaces all 3
+UNAVAILABLE_AFTER_SECONDS = 900  # go unavailable if no successful update for this long
 
 # Sensor attribute keys
 ATTR_SUBJECT = "subject"
