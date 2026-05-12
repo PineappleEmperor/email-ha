@@ -70,7 +70,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     try:
         await coordinator.async_config_entry_first_refresh()
     except Exception as err:
-        raise ConfigEntryNotReady(f"Initial email fetch failed: {err}") from err
+        _LOGGER.warning("Initial email fetch failed: %s: %s", type(err).__name__, err)
+        raise ConfigEntryNotReady(f"Initial email fetch failed: {type(err).__name__}: {err}") from err
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
@@ -139,7 +140,8 @@ def _register_services(hass: HomeAssistant) -> None:
         try:
             await coordinator.oauth_session.async_ensure_token_valid()
         except Exception as err:
-            raise ServiceValidationError(f"Token refresh failed: {err}") from err
+            _LOGGER.warning("Token refresh failed: %s: %s", type(err).__name__, err)
+            raise ServiceValidationError(f"Token refresh failed: {type(err).__name__}: {err}") from err
 
         token: dict[str, Any] = coordinator.oauth_session.token  # type: ignore[assignment]
         access_token = str(token["access_token"])
@@ -159,7 +161,8 @@ def _register_services(hass: HomeAssistant) -> None:
         except ImapAuthError as err:
             raise ServiceValidationError(f"IMAP authentication error: {err}") from err
         except Exception as err:
-            raise ServiceValidationError(f"IMAP query failed: {err}") from err
+            _LOGGER.warning("IMAP query failed: %s: %s", type(err).__name__, err)
+            raise ServiceValidationError(f"IMAP query failed: {type(err).__name__}: {err}") from err
 
         return {"emails": emails}
 
