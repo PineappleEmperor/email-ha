@@ -44,8 +44,8 @@ def _get_text_body(msg: Message, max_length: int | None = 500) -> str:
                         charset = part.get_content_charset() or "utf-8"
                         text = payload.decode(charset, errors="replace")
                         return text if max_length is None else text[:max_length]
-                except Exception:  # noqa: BLE001
-                    pass
+                except Exception as err:  # noqa: BLE001
+                    _LOGGER.debug("Failed to decode multipart text body: %s: %s", type(err).__name__, err)
     else:
         try:
             payload = msg.get_payload(decode=True)
@@ -53,8 +53,8 @@ def _get_text_body(msg: Message, max_length: int | None = 500) -> str:
                 charset = msg.get_content_charset() or "utf-8"
                 text = payload.decode(charset, errors="replace")
                 return text if max_length is None else text[:max_length]
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.debug("Failed to decode text body: %s: %s", type(err).__name__, err)
     return ""
 
 
@@ -71,8 +71,8 @@ def _get_html_body(msg: Message) -> str:
                     if isinstance(payload, bytes):
                         charset = part.get_content_charset() or "utf-8"
                         return payload.decode(charset, errors="replace")
-                except Exception:  # noqa: BLE001
-                    pass
+                except Exception as err:  # noqa: BLE001
+                    _LOGGER.debug("Failed to decode HTML body: %s: %s", type(err).__name__, err)
     return ""
 
 
@@ -85,7 +85,11 @@ def _get_attachments(msg: Message) -> list[dict[str, Any]]:
         content_disposition = str(part.get("Content-Disposition", ""))
         if "attachment" not in content_disposition:
             continue
-        payload = part.get_payload(decode=True)
+        try:
+            payload = part.get_payload(decode=True)
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.debug("Failed to decode attachment payload: %s: %s", type(err).__name__, err)
+            continue
         if not isinstance(payload, bytes):
             continue
         attachments.append({
@@ -186,8 +190,8 @@ class ImapClient:
         if self._client is not None:
             try:
                 await self._client.logout()
-            except Exception:  # noqa: BLE001
-                pass
+            except Exception as err:  # noqa: BLE001
+                _LOGGER.debug("IMAP logout failed: %s: %s", type(err).__name__, err)
             finally:
                 self._client = None
 
@@ -291,5 +295,5 @@ class ImapClient:
                 return None
             return parse_email_bytes(raw, uid, include_full_body, include_attachments)
         except Exception as err:  # noqa: BLE001
-            _LOGGER.debug("Failed to fetch UID %s: %s", uid, err)
+            _LOGGER.debug("Failed to fetch UID %s: %s: %s", uid, type(err).__name__, err)
             return None

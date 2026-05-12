@@ -105,6 +105,7 @@ class UnreadCountSensor(_BaseEmailSensor):
     _attr_icon = "mdi:email-outline"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "messages"
+    _attr_suggested_display_precision = 0
 
     def __init__(
         self, coordinator: EmailDataUpdateCoordinator, entry: ConfigEntry
@@ -128,6 +129,7 @@ class TotalCountSensor(_BaseEmailSensor):
     _attr_icon = "mdi:email-multiple-outline"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "messages"
+    _attr_suggested_display_precision = 0
 
     def __init__(
         self, coordinator: EmailDataUpdateCoordinator, entry: ConfigEntry
@@ -151,6 +153,7 @@ class FoldersSensor(_BaseEmailSensor):
     _attr_icon = "mdi:folder-multiple-outline"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "folders"
+    _attr_suggested_display_precision = 0
 
     def __init__(
         self, coordinator: EmailDataUpdateCoordinator, entry: ConfigEntry

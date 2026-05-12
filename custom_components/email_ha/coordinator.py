@@ -82,9 +82,9 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
                 )
             await self.oauth_session.async_ensure_token_valid()
         except Exception as err:
-            _LOGGER.warning("Token refresh failed for %s: %s", self._email, err)
+            _LOGGER.warning("Token refresh failed for %s: %s: %s", self._email, type(err).__name__, err)
             raise ConfigEntryAuthFailed(
-                f"Token refresh failed for {self._email}"
+                f"Token refresh failed for {self._email}: {type(err).__name__}: {err}"
             ) from err
 
         access_token = str(self.oauth_session.token["access_token"])
@@ -101,8 +101,8 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
             _LOGGER.warning("IMAP auth error for %s: %s", self._email, err)
             raise ConfigEntryAuthFailed(str(err)) from err
         except Exception as err:
-            _LOGGER.warning("IMAP error for %s: %s", self._email, err)
-            raise UpdateFailed(f"IMAP error for {self._email}: {err}") from err
+            _LOGGER.warning("IMAP error for %s: %s: %s", self._email, type(err).__name__, err)
+            raise UpdateFailed(f"IMAP error for {self._email}: {type(err).__name__}: {err}") from err
 
         self.last_success_time = datetime.now(timezone.utc)
         _LOGGER.debug("Successful update for %s, fetched %d emails", self._email, len(emails))
