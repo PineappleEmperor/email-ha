@@ -81,6 +81,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _register_services(hass)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    coordinator.start_idle()
+    entry.async_on_unload(coordinator.stop_idle)
 
     return True
 

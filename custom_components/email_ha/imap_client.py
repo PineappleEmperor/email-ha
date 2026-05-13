@@ -1,7 +1,10 @@
 """Async IMAP client with XOAUTH2 authentication."""
 from __future__ import annotations
 
+import asyncio
 import base64
+import binascii
+import contextlib
 import email
 from email.header import decode_header
 from email.message import Message
@@ -11,6 +14,7 @@ import re
 from typing import Any, Self, cast
 
 import aioimaplib
+from aioimaplib.aioimaplib import STOP_WAIT_SERVER_PUSH
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,7 +48,7 @@ def _get_text_body(msg: Message, max_length: int | None = 500) -> str:
                         charset = part.get_content_charset() or "utf-8"
                         text = payload.decode(charset, errors="replace")
                         return text if max_length is None else text[:max_length]
-                except Exception as err:  # noqa: BLE001
+                except (LookupError, binascii.Error) as err:
                     _LOGGER.debug("Failed to decode multipart text body: %s: %s", type(err).__name__, err)
     else:
         try:
@@ -53,7 +57,7 @@ def _get_text_body(msg: Message, max_length: int | None = 500) -> str:
                 charset = msg.get_content_charset() or "utf-8"
                 text = payload.decode(charset, errors="replace")
                 return text if max_length is None else text[:max_length]
-        except Exception as err:  # noqa: BLE001
+        except (LookupError, binascii.Error) as err:
             _LOGGER.debug("Failed to decode text body: %s: %s", type(err).__name__, err)
     return ""
 
@@ -71,7 +75,7 @@ def _get_html_body(msg: Message) -> str:
                     if isinstance(payload, bytes):
                         charset = part.get_content_charset() or "utf-8"
                         return payload.decode(charset, errors="replace")
-                except Exception as err:  # noqa: BLE001
+                except (LookupError, binascii.Error) as err:
                     _LOGGER.debug("Failed to decode HTML body: %s: %s", type(err).__name__, err)
     return ""
 
@@ -87,7 +91,7 @@ def _get_attachments(msg: Message) -> list[dict[str, Any]]:
             continue
         try:
             payload = part.get_payload(decode=True)
-        except Exception as err:  # noqa: BLE001
+        except (LookupError, binascii.Error) as err:
             _LOGGER.debug("Failed to decode attachment payload: %s: %s", type(err).__name__, err)
             continue
         if not isinstance(payload, bytes):
@@ -115,7 +119,7 @@ def parse_email_bytes(
     if date_str:
         try:
             date_iso = parsedate_to_datetime(date_str).isoformat()
-        except Exception:  # noqa: BLE001
+        except (TypeError, ValueError, IndexError):
             date_iso = date_str
 
     sender_name, sender_email = parseaddr(_decode_header_value(msg.get("From", "")))
@@ -192,7 +196,7 @@ class ImapClient:
         if self._client is not None:
             try:
                 await self._client.logout()
-            except Exception as err:  # noqa: BLE001
+            except (OSError, aioimaplib.AioImapException) as err:
                 _LOGGER.debug("IMAP logout failed: %s: %s", type(err).__name__, err)
             finally:
                 self._client = None
@@ -296,6 +300,28 @@ class ImapClient:
             if raw is None:
                 return None
             return parse_email_bytes(raw, uid, include_full_body, include_attachments)
-        except Exception as err:  # noqa: BLE001
+        except (OSError, aioimaplib.AioImapException) as err:
             _LOGGER.debug("Failed to fetch UID %s: %s: %s", uid, type(err).__name__, err)
             return None
+
+    async def idle_wait(self, timeout: float) -> list[bytes] | None:
+        """Run one IDLE cycle; folder must already be selected.
+
+        Returns server push lines on notification, None on timeout or stop signal.
+        wait_server_push() returns list[bytes] directly (not a Response object).
+        """
+        if self._client is None:
+            raise ImapClientError("Not connected")
+        idle = await self._client.idle_start()
+        try:
+            push = cast(list[bytes], await self._client.wait_server_push(timeout=timeout))
+        except asyncio.TimeoutError:
+            return None
+        else:
+            if push is STOP_WAIT_SERVER_PUSH or not push:
+                return None
+            return [line for line in push if isinstance(line, bytes)] or None
+        finally:
+            self._client.idle_done()
+            with contextlib.suppress(Exception):
+                await idle
