@@ -125,7 +125,8 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
             raise ConfigEntryAuthFailed(
                 f"Token refresh failed for {self._email}: {type(err).__name__}: {err}"
             ) from err
-        return str(self.oauth_session.token["access_token"])
+        raw = self.oauth_session.token["access_token"]
+        return raw.decode() if isinstance(raw, bytes) else str(raw)
 
 
     async def _async_fetch_data(self, client: ImapClient) -> EmailData:
