@@ -8,7 +8,7 @@ from email.message import Message
 from email.utils import parseaddr, parsedate_to_datetime
 import logging
 import re
-from typing import Any, cast
+from typing import Any, Self, cast
 
 import aioimaplib
 
@@ -165,10 +165,12 @@ class ImapClient:
         self._port = port
         self._client: aioimaplib.IMAP4_SSL | None = None
 
-    async def __aenter__(self) -> ImapClient:
+    async def __aenter__(self) -> Self:
+        """Enter context manager."""
         return self
 
-    async def __aexit__(self, *_: Any) -> None:
+    async def __aexit__(self, *_: object) -> None:
+        """Exit context manager and disconnect."""
         await self.disconnect()
 
     async def connect(self, user: str, access_token: str) -> None:

@@ -68,6 +68,16 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
             update_interval=timedelta(seconds=scan_interval),
         )
 
+    @property
+    def folder(self) -> str:
+        """Return the monitored folder name."""
+        return self._folder
+
+    @property
+    def scan_interval(self) -> int:
+        """Return the polling interval in seconds."""
+        return self._scan_interval
+
     async def _async_update_data(self) -> EmailData:
         """Fetch latest emails; raise on auth or connection failure."""
         try:
