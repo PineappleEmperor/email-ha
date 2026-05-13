@@ -476,7 +476,7 @@ ignore = [
   "TRY003", # Avoid specifying long messages outside the exception class
   "TRY400", # Use `logging.exception` instead of `logging.error`
   # Ignored due to performance: https://github.com/charliermarsh/ruff/issues/2923
-  "UP038", # Use `X | Y` in `isinstance` call instead of `(X, Y)`
+  # "UP038" removed rule — no longer valid
   "UP046", # Non PEP 695 generic class
   "UP047", # Non PEP 696 generic function
   "UP049", # Avoid private type parameter names
@@ -588,6 +588,9 @@ split-on-trailing-comma = false
 # Temporary
 "homeassistant/**" = ["PTH"]
 "tests/**" = ["PTH"]
+
+# Custom component: _attr_-based sensor overrides are self-documenting via class docstrings
+"custom_components/**" = ["D102", "D107"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 25

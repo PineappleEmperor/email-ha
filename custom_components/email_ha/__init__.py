@@ -81,6 +81,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _register_services(hass)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    coordinator.start_idle()
+    entry.async_on_unload(coordinator.stop_idle)
 
     return True
 
@@ -103,8 +105,8 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
     """Reload entry when user-facing config changes (not on token refresh)."""
     coordinator: EmailDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     if (
-        entry.data.get(CONF_FOLDER) != coordinator._folder
-        or entry.data.get(CONF_SCAN_INTERVAL) != coordinator._scan_interval
+        entry.data.get(CONF_FOLDER) != coordinator.folder
+        or entry.data.get(CONF_SCAN_INTERVAL) != coordinator.scan_interval
     ):
         await hass.config_entries.async_reload(entry.entry_id)
 

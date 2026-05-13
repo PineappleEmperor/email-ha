@@ -14,9 +14,14 @@ GMAIL_IMAP_PORT = 993
 GMAIL_SCOPES = "https://mail.google.com/"
 
 DEFAULT_FOLDER = "INBOX"
-DEFAULT_SCAN_INTERVAL = 300  # seconds
-POLL_FETCH_COUNT = 3  # background poll fetches latest 3; sensor surfaces all 3
-UNAVAILABLE_AFTER_SECONDS = 900  # go unavailable if no successful update for this long
+DEFAULT_SCAN_INTERVAL = 300
+POLL_FETCH_COUNT = 3
+UNAVAILABLE_AFTER_SECONDS = 900
+
+# IMAP IDLE
+IDLE_PUSH_WAIT_TIMEOUT = 29 * 60  # RFC 2177: re-issue IDLE before 30 min
+IDLE_RECONNECT_DELAYS = [5, 10, 20, 40, 80, 120]
+IDLE_FALLBACK_POLL_INTERVAL = 900
 
 # Sensor attribute keys
 ATTR_SUBJECT = "subject"
