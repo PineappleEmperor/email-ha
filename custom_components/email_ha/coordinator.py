@@ -28,6 +28,8 @@ from .imap_client import ImapAuthError, ImapClient, ImapClientError
 
 _LOGGER = logging.getLogger(__name__)
 
+_FOLDER_REFRESH_INTERVAL = 86400
+
 
 @dataclass
 class EmailData:
@@ -72,6 +74,8 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
         self._last_uid: str | None = None
         self.last_success_time: datetime | None = None
         self._idle_task: asyncio.Task | None = None
+        self._cached_folders: list[str] = []
+        self._folders_fetched_at: float = 0.0
 
         super().__init__(
             hass,
@@ -127,7 +131,9 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
     async def _async_fetch_data(self, client: ImapClient) -> EmailData:
         """Fetch current email state from an already-connected client."""
         status = await client.get_folder_status(self._folder)
-        folders = await client.list_folders()
+        if time.monotonic() - self._folders_fetched_at > _FOLDER_REFRESH_INTERVAL:
+            self._cached_folders = await client.list_folders()
+            self._folders_fetched_at = time.monotonic()
         emails = await client.search_emails(self._folder, "ALL", POLL_FETCH_COUNT)
         self.last_success_time = datetime.now(timezone.utc)
         _LOGGER.debug(
@@ -140,7 +146,7 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
             emails=emails,
             unread_count=status.get("unseen", 0),
             total_count=status.get("messages", 0),
-            folders=folders,
+            folders=self._cached_folders,
         )
 
 
@@ -244,17 +250,20 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
                     max(60.0, time_until_expiry - 60),
                 )
 
+                _LOGGER.debug(
+                    "IDLE waiting for %s (timeout=%.0fs)", self._email, idle_timeout
+                )
                 push_lines = await client.idle_wait(idle_timeout)
 
-                if push_lines and any(
-                    b"EXISTS" in line or b"EXPUNGE" in line for line in push_lines
-                ):
-                    _LOGGER.debug(
-                        "IDLE push for %s: %s", self._email, push_lines
-                    )
+                if not push_lines:
+                    _LOGGER.debug("IDLE timeout/no push for %s", self._email)
+                elif any(b"EXISTS" in line or b"EXPUNGE" in line for line in push_lines):
+                    _LOGGER.debug("IDLE push for %s: %s", self._email, push_lines)
                     data = await self._async_fetch_data(client)
                     self.async_set_updated_data(data)
                     self._fire_new_email_event(data)
+                else:
+                    _LOGGER.debug("IDLE push ignored for %s: %s", self._email, push_lines)
 
         except ImapAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
