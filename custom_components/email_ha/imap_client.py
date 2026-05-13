@@ -182,7 +182,7 @@ class ImapClient:
         client = aioimaplib.IMAP4_SSL(host=self._host, port=self._port)
         await client.wait_hello_from_server()
 
-        response = await client.xoauth2(user, access_token.encode())
+        response = await client.xoauth2(user, cast(bytes, access_token))
         if response.result != "OK":
             await client.logout()
             raise ImapAuthError(
