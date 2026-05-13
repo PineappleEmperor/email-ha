@@ -194,8 +194,10 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
 
     async def _async_idle_loop(self) -> None:
         """Outer IDLE loop: reconnect with exponential backoff on transient errors."""
+        _LOGGER.debug("IDLE loop starting for %s", self._email)
         reconnect_attempt = 0
         while True:
+            _LOGGER.debug("IDLE attempt %d for %s", reconnect_attempt, self._email)
             reconnect_attempt = await self._async_idle_attempt(reconnect_attempt)
 
     async def _async_idle_attempt(self, reconnect_attempt: int) -> int:
@@ -224,17 +226,24 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
 
     async def _async_run_idle_session(self) -> None:
         """One IDLE session: connect, fetch, then IDLE until token nears expiry."""
+        _LOGGER.debug("IDLE session: refreshing token for %s", self._email)
         access_token = await self._async_ensure_fresh_token()
         token_expires_at: float = self.oauth_session.token.get("expires_at", 0)
+        _LOGGER.debug(
+            "IDLE session: connecting for %s (token valid for %.0fs)",
+            self._email,
+            token_expires_at - time.time(),
+        )
 
         client = ImapClient(self._imap_host, self._imap_port)
         try:
             await client.connect(self._email, access_token)
+            _LOGGER.debug("IDLE session: connected for %s", self._email)
 
-            # Initial fetch — seeds coordinator data and fires any pending event
             data = await self._async_fetch_data(client)
             self.async_set_updated_data(data)
             self._fire_new_email_event(data)
+            _LOGGER.debug("IDLE session: initial fetch done for %s, entering wait loop", self._email)
 
             while True:
                 # Reconnect before token expires (10-min headroom)
