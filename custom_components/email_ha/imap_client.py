@@ -305,16 +305,12 @@ class ImapClient:
             return None
 
     async def idle_wait(self, timeout: float) -> list[bytes] | None:
-        """Run one IDLE cycle; folder must already be selected.
-
-        Returns server push lines on notification, None on timeout or stop signal.
-        wait_server_push() returns list[bytes] directly (not a Response object).
-        """
+        """Run one IDLE cycle; folder must already be selected."""
         if self._client is None:
             raise ImapClientError("Not connected")
-        idle = await self._client.idle_start()
+        idle = await self._client.idle_start(timeout=timeout)
         try:
-            push = cast(list[bytes], await self._client.wait_server_push(timeout=timeout))
+            push = cast(list[bytes], await self._client.wait_server_push())
         except asyncio.TimeoutError:
             return None
         else:
@@ -323,5 +319,8 @@ class ImapClient:
             return [line for line in push if isinstance(line, bytes)] or None
         finally:
             self._client.idle_done()
-            with contextlib.suppress(Exception):
-                await idle
+            if not idle.done():
+                idle.cancel()
+            with contextlib.suppress(asyncio.CancelledError, aioimaplib.AioImapException):
+                async with asyncio.timeout(10):
+                    await idle
