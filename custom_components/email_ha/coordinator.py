@@ -240,40 +240,33 @@ class EmailDataUpdateCoordinator(DataUpdateCoordinator[EmailData]):
             await client.connect(self._email, access_token)
             _LOGGER.debug("IDLE session: connected for %s", self._email)
 
-            data = await self._async_fetch_data(client)
-            self.async_set_updated_data(data)
-            self._fire_new_email_event(data)
-            _LOGGER.debug("IDLE session: initial fetch done for %s, entering wait loop", self._email)
-
             while True:
-                # Reconnect before token expires (10-min headroom)
                 if time.time() > token_expires_at - 600:
                     _LOGGER.debug(
                         "Token nearing expiry for %s — reconnecting IDLE", self._email
                     )
-                    return  # outer loop reconnects with a fresh token
+                    return
 
-                # Cap the IDLE wait to the time remaining before token expiry
+                data = await self._async_fetch_data(client)
+                self.async_set_updated_data(data)
+                self._fire_new_email_event(data)
+
                 time_until_expiry = token_expires_at - time.time()
                 idle_timeout = min(
                     float(IDLE_PUSH_WAIT_TIMEOUT),
                     max(60.0, time_until_expiry - 60),
                 )
-
                 _LOGGER.debug(
                     "IDLE waiting for %s (timeout=%.0fs)", self._email, idle_timeout
                 )
                 push_lines = await client.idle_wait(idle_timeout)
 
-                if not push_lines:
-                    _LOGGER.debug("IDLE timeout/no push for %s", self._email)
-                elif any(b"EXISTS" in line or b"EXPUNGE" in line for line in push_lines):
+                if push_lines and any(b"EXISTS" in line or b"EXPUNGE" in line for line in push_lines):
                     _LOGGER.debug("IDLE push for %s: %s", self._email, push_lines)
-                    data = await self._async_fetch_data(client)
-                    self.async_set_updated_data(data)
-                    self._fire_new_email_event(data)
-                else:
+                elif push_lines:
                     _LOGGER.debug("IDLE push ignored for %s: %s", self._email, push_lines)
+                else:
+                    _LOGGER.debug("IDLE timeout for %s", self._email)
 
         except ImapAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
