@@ -9,7 +9,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
-from homeassistant.exceptions import ConfigEntryNotReady, ServiceValidationError
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.config_entry_oauth2_flow import (
     OAuth2Session,
@@ -69,6 +69,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:
         await coordinator.async_config_entry_first_refresh()
+    except ConfigEntryAuthFailed:
+        raise
     except Exception as err:
         _LOGGER.warning("Initial email fetch failed: %s: %s", type(err).__name__, err)
         raise ConfigEntryNotReady(f"Initial email fetch failed: {type(err).__name__}: {err}") from err
