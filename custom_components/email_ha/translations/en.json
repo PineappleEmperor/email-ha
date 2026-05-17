@@ -19,10 +19,15 @@
           "folder": "IMAP folder",
           "scan_interval": "Poll interval (seconds)"
         }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate with Google",
+        "description": "Your Gmail authorisation has expired or been revoked. Click Submit to re-authenticate with Google."
       }
     },
     "abort": {
       "already_configured": "This Gmail address is already configured.",
+      "reauth_successful": "Re-authentication was successful.",
       "missing_credentials": "No application credentials found. Add them under Settings → Devices & Services → ⋮ → Application Credentials.",
       "oauth_error": "An OAuth2 error occurred. Check that your OAuth2 client ID and secret are correct under Settings → Devices & Services → ⋮ → Application Credentials.",
       "oauth_unauthorized": "Google rejected the authorisation. Ensure your OAuth2 app has the Gmail IMAP scope and your account is added as a test user.",
