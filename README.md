@@ -83,7 +83,14 @@ response_variable: result
 ```
 
 `result.emails` is a list of objects with fields:
-`uid`, `subject`, `sender`, `date`, `message_id`, `preview`.
+`uid`, `subject`, `sender_name`, `sender_email`, `date`.
+
+With `include_full_body: true` each object also carries `body_text`, `body_html`, and
+`body_text_derived_from_html`. When the email has no `text/plain` part, `body_text` is a
+tag-stripped approximation of the HTML and `body_text_derived_from_html` is `true` — treat
+that text as lossy (formatting, links, and layout are discarded).
+
+With `include_attachments: true` each object also carries `attachments`.
 
 ### IMAP search criteria examples
 
