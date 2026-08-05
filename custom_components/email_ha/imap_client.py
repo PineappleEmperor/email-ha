@@ -9,6 +9,7 @@ import email
 from email.header import decode_header
 from email.message import Message
 from email.utils import parseaddr, parsedate_to_datetime
+from html.parser import HTMLParser
 import logging
 import re
 from typing import Any, Self, cast
@@ -50,7 +51,7 @@ def _get_text_body(msg: Message, max_length: int | None = 500) -> str:
                         return text if max_length is None else text[:max_length]
                 except (LookupError, binascii.Error) as err:
                     _LOGGER.debug("Failed to decode multipart text body: %s: %s", type(err).__name__, err)
-    else:
+    elif msg.get_content_type() == "text/plain":
         try:
             payload = msg.get_payload(decode=True)
             if isinstance(payload, bytes):
@@ -77,7 +78,69 @@ def _get_html_body(msg: Message) -> str:
                         return payload.decode(charset, errors="replace")
                 except (LookupError, binascii.Error) as err:
                     _LOGGER.debug("Failed to decode HTML body: %s: %s", type(err).__name__, err)
+    elif msg.get_content_type() == "text/html":
+        try:
+            payload = msg.get_payload(decode=True)
+            if isinstance(payload, bytes):
+                charset = msg.get_content_charset() or "utf-8"
+                return payload.decode(charset, errors="replace")
+        except (LookupError, binascii.Error) as err:
+            _LOGGER.debug("Failed to decode HTML body: %s: %s", type(err).__name__, err)
     return ""
+
+
+_HTML_SKIP_TAGS = frozenset({"script", "style", "head", "title"})
+_HTML_BREAK_TAGS = frozenset(
+    {
+        "br", "p", "div", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6",
+        "table", "ul", "ol", "blockquote", "section", "article", "header",
+        "footer", "hr", "pre",
+    }
+)
+
+
+class _HtmlTextExtractor(HTMLParser):
+    """Collect visible text from an HTML document."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._chunks: list[str] = []
+        self._skip_depth = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in _HTML_SKIP_TAGS:
+            self._skip_depth += 1
+        elif tag in _HTML_BREAK_TAGS:
+            self._chunks.append("\n")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in _HTML_SKIP_TAGS:
+            self._skip_depth = max(0, self._skip_depth - 1)
+        elif tag in _HTML_BREAK_TAGS:
+            self._chunks.append("\n")
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_depth == 0:
+            self._chunks.append(data)
+
+    def get_text(self) -> str:
+        """Return the collapsed visible text."""
+        text = "".join(self._chunks)
+        text = re.sub(r"[^\S\n]+", " ", text)
+        text = re.sub(r" *\n *", "\n", text)
+        return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
+def _html_to_text(html: str) -> str:
+    """Derive a plain-text approximation of an HTML body."""
+    parser = _HtmlTextExtractor()
+    try:
+        parser.feed(html)
+        parser.close()
+    except AssertionError as err:
+        _LOGGER.debug("HTML-to-text extraction failed: %s: %s", type(err).__name__, err)
+        return ""
+    return parser.get_text()
 
 
 def _get_attachments(msg: Message) -> list[dict[str, Any]]:
@@ -132,8 +195,16 @@ def parse_email_bytes(
         "date": date_iso,
     }
     if include_full_body:
-        result["body_text"] = _get_text_body(msg, None).strip()
-        result["body_html"] = _get_html_body(msg).strip()
+        body_text = _get_text_body(msg, None).strip()
+        body_html = _get_html_body(msg).strip()
+        # Consumers must be able to tell a real text/plain part from a lossy
+        # tag-stripped approximation of the HTML.
+        derived = not body_text and bool(body_html)
+        if derived:
+            body_text = _html_to_text(body_html)
+        result["body_text"] = body_text
+        result["body_html"] = body_html
+        result["body_text_derived_from_html"] = derived
     if include_attachments:
         result["attachments"] = _get_attachments(msg)
     return result
